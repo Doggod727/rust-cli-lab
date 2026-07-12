@@ -1,8 +1,6 @@
-use std::error::Error;
 use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
-use predicates::path::ExistencePredicate;
 
 // type 关键词创建别名
 type TestResult = Result<(), Box<dyn std::error::Error>>;
@@ -23,13 +21,11 @@ fn dies_no_args() -> TestResult {
 
 #[test]
 fn runs() {
-    let mut cmd = Command::cargo_bin("echor")
-        .unwrap();
+    let mut cmd = Command::cargo_bin("echor").unwrap();
     cmd.arg("hello").assert().success();
     // arg()传入参数
     // assert运行返回程序返回值
     // success断言返回值为1
-
 }
 
 #[test]
@@ -53,9 +49,9 @@ fn hello2_no_newline() -> TestResult {
 fn run(args: &[&str], expected_file: &str) -> TestResult {
     let expected = fs::read_to_string(expected_file)?;
     Command::cargo_bin("echor")?
-    .args(args)
-    .assert()
-    .success()
-    .stdout(expected);
+        .args(args)
+        .assert()
+        .success()
+        .stdout(expected);
     Ok(())
 }

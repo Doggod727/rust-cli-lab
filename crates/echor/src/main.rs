@@ -1,4 +1,4 @@
-use clap::{Command, Arg, ArgAction}; // clap::Command对应于2.x的clap::App
+use clap::{Arg, ArgAction, Command}; // clap::Command对应于2.x的clap::App
 // 其是一个结构体
 // 用来解析命令行参数
 fn main() {
@@ -45,7 +45,8 @@ fn main() {
     // .action(ArgAction::SetTrue) 开关，出现了-n就是true
     // println!("{:#?}", matches);
     // 通过Command获取了参数之后，我们要提取出来
-    let text : Vec<String> = matches.get_many::<String>("text")
+    let text: Vec<String> = matches
+        .get_many::<String>("text")
         .unwrap()
         .cloned()
         .collect();
