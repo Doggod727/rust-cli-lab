@@ -14,9 +14,9 @@
 
 ## 项目进度
 
-- [ ] 01 hello
-- [ ] 02 echor
-- [ ] 03 catr
+- [-] 01 hello
+- [-] 02 echor
+- [-] 03 catr
 - [ ] 04 headr
 - [ ] 05 wcr
 - [ ] 06 uniqr
