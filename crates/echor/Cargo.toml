@@ -1,0 +1,14 @@
+[package]
+name = "echor"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = "4.6.1"
+# 下载的源代码都位于主目录的.cargo文件中
+# 编译产物在target/debug/deps中
+
+# 集成测试包
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "2"
