@@ -1,0 +1,16 @@
+[package]
+name = "uniqr"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.79"
+clap = { version = "4.6.1", features = ["derive"] }
+
+[dev-dependencies]
+assert_cmd = "2.0.13"
+predicates = "3.0.4"
+pretty_assertions = "1.4.1"
+rand = "0.8.6"
+tempfile = "3.27.0" #tempfile可以创建临时文件
+
