@@ -54,7 +54,7 @@ pub fn get_args() -> MyResult<Config> {
         .map(|vals| {
             vals.map(|name| {
                     Regex::new(&name)
-                        .map_err(|err| format!("Invalid --name \"{}\"", name))
+                        .map_err(|_err| format!("Invalid --name \"{}\"", name))
                 })
                 .collect::<Result<Vec<_>, _>>()
         })
