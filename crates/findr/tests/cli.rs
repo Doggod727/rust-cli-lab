@@ -2,7 +2,7 @@ use anyhow::Result;
 use assert_cmd::Command;
 use predicates::prelude::*;
 use pretty_assertions::assert_eq;
-use rand::{distributions::Alphanumeric, Rng};
+use rand::{Rng, distributions::Alphanumeric};
 use std::{borrow::Cow, fs, path::Path};
 
 const PRG: &str = "findr";
@@ -76,15 +76,13 @@ fn format_file_name(expected_file: &str) -> Cow<str> {
 fn run(args: &[&str], expected_file: &str) -> Result<()> {
     let file = format_file_name(expected_file);
     let contents = fs::read_to_string(file.as_ref())?;
-    let mut expected: Vec<&str> =
-        contents.split('\n').filter(|s| !s.is_empty()).collect();
+    let mut expected: Vec<&str> = contents.split('\n').filter(|s| !s.is_empty()).collect();
     expected.sort();
 
     let cmd = Command::cargo_bin(PRG)?.args(args).assert().success();
     let out = cmd.get_output();
     let stdout = String::from_utf8(out.stdout.clone())?;
-    let mut lines: Vec<&str> =
-        stdout.split('\n').filter(|s| !s.is_empty()).collect();
+    let mut lines: Vec<&str> = stdout.split('\n').filter(|s| !s.is_empty()).collect();
     lines.sort();
 
     assert_eq!(lines, expected);
@@ -303,8 +301,7 @@ fn unreadable_dir() -> Result<()> {
 
     let out = cmd.get_output();
     let stdout = String::from_utf8(out.stdout.clone())?;
-    let lines: Vec<&str> =
-        stdout.split('\n').filter(|s| !s.is_empty()).collect();
+    let lines: Vec<&str> = stdout.split('\n').filter(|s| !s.is_empty()).collect();
 
     assert_eq!(lines.len(), 17);
 

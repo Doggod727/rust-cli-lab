@@ -1,17 +1,16 @@
-use clap::{Arg, ArgGroup, Command};
-use std::error::Error; // 导入Error trait
-use std::io::{self, BufRead, BufReader};
-use std::ops::Range;
 use crate::Extract::*;
-use std::num::NonZeroUsize;
+use clap::{Arg, ArgGroup, Command};
+use csv::{ReaderBuilder, StringRecord, WriterBuilder};
 use regex::Regex;
+use std::error::Error; // 导入Error trait
 use std::fs::File;
-use csv::{StringRecord, ReaderBuilder, WriterBuilder}; // 解析csv文件的库
+use std::io::{self, BufRead, BufReader};
+use std::num::NonZeroUsize;
+use std::ops::Range; // 解析csv文件的库
 // 自定义Result类型
 type MyResult<T> = Result<T, Box<dyn Error>>;
 // 自定义一个PositionList类型，用来表示正整数值的范围
 type PositionList = Vec<Range<usize>>; // 表示正整数值的范围
-
 
 #[derive(Debug)]
 pub enum Extract {
@@ -23,10 +22,10 @@ pub enum Extract {
 // Config结构体
 #[derive(Debug)]
 pub struct Config {
-    files : Vec<String>, // 输入文件列表
-    delimiter: u8, // 指定分割符，默认时是制表符分隔
-    extract: Extract, // 读入的指定提取范围, 必须指定三者中的一个，并且只能指定一个
-    // 范围选择可以为单个数字或者2-4这样的范围
+    files: Vec<String>, // 输入文件列表
+    delimiter: u8,      // 指定分割符，默认时是制表符分隔
+    extract: Extract,   // 读入的指定提取范围, 必须指定三者中的一个，并且只能指定一个
+                        // 范围选择可以为单个数字或者2-4这样的范围
 }
 // 我们的挑战程序按照给定的顺序进行选择
 // get_args()方法
@@ -53,22 +52,21 @@ pub fn get_args() -> MyResult<Config> {
                 .short('b')
                 .long("bytes")
                 .value_name("BYTES")
-                .help("Selected bytes")
+                .help("Selected bytes"),
         )
         .arg(
             Arg::new("chars")
                 .short('c')
                 .long("chars")
                 .value_name("CHARS")
-                .help("Selected characters")
-
+                .help("Selected characters"),
         )
         .arg(
             Arg::new("fields")
                 .short('f')
                 .long("fields")
                 .value_name("FIELDS")
-                .help("Selected fields")
+                .help("Selected fields"),
         )
         .arg(
             Arg::new("delimiter")
@@ -84,10 +82,10 @@ pub fn get_args() -> MyResult<Config> {
             ArgGroup::new("mode")
                 .args(["chars", "bytes", "fields"])
                 .required(true), // 如果不加required表示三者最多只能出现其中的一个
-                // 加了就说明必须出现其中的一个
-                // 如果不适用ArgGroup
-            // 注意，conflicts检验优先级高于required
-            // 并且conflict冲突检验是双向的
+                                 // 加了就说明必须出现其中的一个
+                                 // 如果不适用ArgGroup
+                                 // 注意，conflicts检验优先级高于required
+                                 // 并且conflict冲突检验是双向的
         )
         .get_matches();
     // 获取extract
@@ -129,7 +127,7 @@ pub fn get_args() -> MyResult<Config> {
         return Err(From::from(format!(
             "--delim \"{}\" must be a single byte",
             delimiter
-        )))
+        )));
     }
     Ok(Config {
         files: matches
@@ -138,7 +136,7 @@ pub fn get_args() -> MyResult<Config> {
             .cloned()
             .collect(),
         delimiter: *delim_bytes.first().unwrap(),
-        extract
+        extract,
     })
 }
 
@@ -151,7 +149,7 @@ fn parse_index(input: &str) -> Result<usize, String> {
             input
                 .parse::<NonZeroUsize>()
                 .map(|n| usize::from(n) - 1)
-            .map_err(|_| value_error())
+                .map_err(|_| value_error())
         })
     // starts_with判断input是否由"+"开头，如果是，调用闭包，返回一个Option<Result<usize, String>>的Some变体
     // 否则返回None变体
@@ -161,32 +159,29 @@ fn parse_index(input: &str) -> Result<usize, String> {
 fn parse_pos(range: &str) -> MyResult<PositionList> {
     // 表示(\d+)表示一个或者多个数字
     let range_re = Regex::new(r"^(\d+)-(\d+)$")?;
-    range.split(',')
+    range
+        .split(',')
         .into_iter()
         .map(|val| {
-            parse_index(val).map(|n| n..n+1).or_else(
-                |e| {
-                    // 如果能够和正则表达式匹配，那么使用captures方法来提取数字，并且从1开始索引
-                    range_re.captures(val).ok_or(e).and_then(
-                        |captures| {
-                            let n1 = parse_index(&captures[1])?;
-                            let n2 = parse_index(&captures[2])?;
-                            if n1 >= n2 {
-                                return Err(format!(
-                                    "First number in range ({}) \
+            parse_index(val).map(|n| n..n + 1).or_else(|e| {
+                // 如果能够和正则表达式匹配，那么使用captures方法来提取数字，并且从1开始索引
+                range_re.captures(val).ok_or(e).and_then(|captures| {
+                    let n1 = parse_index(&captures[1])?;
+                    let n2 = parse_index(&captures[2])?;
+                    if n1 >= n2 {
+                        return Err(format!(
+                            "First number in range ({}) \
                                      must be lower than second number ({})",
-                                    n1 + 1, n2 + 1
-                                ));
-                            }
-                            Ok(n1..n2+1)
-                        }
-                    )
-                }
-            )
+                            n1 + 1,
+                            n2 + 1
+                        ));
+                    }
+                    Ok(n1..n2 + 1)
+                })
+            })
         })
         .collect::<Result<_, _>>()
         .map_err(From::from)
-
 }
 // run方法
 // 夺取读取的参数结构体的所有权，成功返回Ok(())，失败返回任何实现了Error trait的类型
@@ -213,9 +208,7 @@ pub fn run(config: Config) -> MyResult<()> {
                     for record in reader.records() {
                         // 开始读取每一个记录
                         let record = record?;
-                        wtr.write_record(extract_fields(
-                            &record, field_pos
-                        ))?;
+                        wtr.write_record(extract_fields(&record, field_pos))?;
                     }
                     // 遍历每一行作为一个记录
                     // 解析出StringRecord
@@ -232,9 +225,8 @@ pub fn run(config: Config) -> MyResult<()> {
                         println!("{}", extract_chars(&line?, char_pos));
                     }
                 }
-            }
+            },
         }
-
     }
     Ok(())
 }
@@ -295,7 +287,7 @@ fn extract_bytes(line: &str, byte_pos: &[Range<usize>]) -> String {
     String::from_utf8_lossy(&selected).into_owned()
 }
 
-fn extract_fields<'a>(record: &'a StringRecord, field_pos: &[Range<usize>])  -> Vec<&'a str>{
+fn extract_fields<'a>(record: &'a StringRecord, field_pos: &[Range<usize>]) -> Vec<&'a str> {
     field_pos
         .iter()
         .cloned()
@@ -305,17 +297,17 @@ fn extract_fields<'a>(record: &'a StringRecord, field_pos: &[Range<usize>])  -> 
 fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
     match filename {
         "-" => Ok(Box::new(BufReader::new(io::stdin()))),
-        _ => Ok(Box::new(BufReader::new(File::open(filename)?)))
+        _ => Ok(Box::new(BufReader::new(File::open(filename)?))),
     }
 }
 
 #[cfg(test)]
 mod unit_tests {
-    use csv::StringRecord;
-    use super::parse_pos;
-    use super::extract_chars;
     use super::extract_bytes;
+    use super::extract_chars;
     use super::extract_fields;
+    use super::parse_pos;
+    use csv::StringRecord;
     #[test]
     fn test_parse_pos() {
         // 单元测试LIST解析，数字可有前导0，不能包含任何非数字字符，数字范围可以用-表示多个数字和范围用逗号分割
@@ -330,34 +322,28 @@ mod unit_tests {
         // 前导符号为+，错误！
         let res = parse_pos("+1");
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().to_string(),
-        "illegal list value: \"+1\"");
+        assert_eq!(res.unwrap_err().to_string(), "illegal list value: \"+1\"");
 
         let res = parse_pos("+1-2");
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().to_string(),
-        "illegal list value: \"+1-2\"");
+        assert_eq!(res.unwrap_err().to_string(), "illegal list value: \"+1-2\"");
 
         // 非数字字符导致错误
         let res = parse_pos("a");
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().to_string(),
-                   "illegal list value: \"a\"");
+        assert_eq!(res.unwrap_err().to_string(), "illegal list value: \"a\"");
 
         let res = parse_pos("1,a");
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().to_string(),
-                   "illegal list value: \"a\"");
+        assert_eq!(res.unwrap_err().to_string(), "illegal list value: \"a\"");
 
         let res = parse_pos("1-a");
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().to_string(),
-                   "illegal list value: \"1-a\"");
+        assert_eq!(res.unwrap_err().to_string(), "illegal list value: \"1-a\"");
 
         let res = parse_pos("a-1");
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().to_string(),
-                   "illegal list value: \"a-1\"");
+        assert_eq!(res.unwrap_err().to_string(), "illegal list value: \"a-1\"");
 
         // 非法范围
         let res = parse_pos("-");
@@ -381,13 +367,17 @@ mod unit_tests {
         // 必须是[)合法区间
         let res = parse_pos("1-1");
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().to_string(),
-        "First number in range (1) must be lower than second number (1)");
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "First number in range (1) must be lower than second number (1)"
+        );
 
         let res = parse_pos("2-1");
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().to_string(),
-                   "First number in range (2) must be lower than second number (1)");
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "First number in range (2) must be lower than second number (1)"
+        );
 
         // 正确示例
         let res = parse_pos("1");
@@ -430,10 +420,7 @@ mod unit_tests {
         assert_eq!(extract_chars("ábc", &[0..1, 2..3]), "ác".to_string());
         assert_eq!(extract_chars("ábc", &[0..3]), "ábc".to_string());
         assert_eq!(extract_chars("ábc", &[2..3, 1..2]), "cb".to_string());
-        assert_eq!(
-            extract_chars("ábc", &[0..1, 1..2, 4..5]),
-            "áb".to_string()
-        );
+        assert_eq!(extract_chars("ábc", &[0..1, 1..2, 4..5]), "áb".to_string());
     }
     #[test]
     fn test_extract_bytes() {
@@ -445,16 +432,12 @@ mod unit_tests {
         assert_eq!(extract_bytes("ábc", &[0..2, 5..6]), "á".to_string());
     }
 
-
     #[test]
     fn test_extract_fields() {
         let rec = StringRecord::from(vec!["Captain", "Sham", "12345"]);
         assert_eq!(extract_fields(&rec, &[0..1]), &["Captain"]);
         assert_eq!(extract_fields(&rec, &[1..2]), &["Sham"]);
-        assert_eq!(
-            extract_fields(&rec, &[0..1, 2..3]),
-            &["Captain", "12345"]
-        );
+        assert_eq!(extract_fields(&rec, &[0..1, 2..3]), &["Captain", "12345"]);
         assert_eq!(extract_fields(&rec, &[0..1, 3..4]), &["Captain"]);
         assert_eq!(extract_fields(&rec, &[1..2, 0..1]), &["Sham", "Captain"]);
     }
