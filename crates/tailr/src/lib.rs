@@ -188,15 +188,16 @@ fn print_bytes<T: Read + Seek>(
 fn get_start_index(take_val: &TakeValue, total: i64) -> Option<u64> {
     match take_val {
         PlusZero => {
-            // 如果+0，说明全部都要打印，如果真的有数据，Some(0)，从0(行或者字节)开始打印
-            if total > 0 { Some(0) } else { None }
+            if total > 0 {
+                Some(0)
+            } else {
+                None
+            }
         }
         TakeNum(num) => {
-            // 1. num == 0，不打印， 2. total == 0 不打印， 3 num > total从正数第num行开始打印，不答应
-            if num == &0 || total == 0 && num > &total {
+            if num == &0 || total == 0 || num > &total {
                 None
             } else {
-                // 需要打印的情况
                 let start = if num < &0 { total + num } else { num - 1 };
                 Some(if start < 0 { 0 } else { start as u64 })
             }
