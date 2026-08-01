@@ -28,7 +28,7 @@ pub fn get_args() -> MyResult<Config> {
             // 用"-"表示默认的值
             Arg::new("files")
                 .value_name("FILES")
-                .help("Input file(s), [defalut \"-\"]")
+                .help("Input file(s), [default \"-\"]")
                 .num_args(0..)
                 .default_value("-"), // 创建一个叫做files的参数Arg, 值占位符时FILES, --help打印信息在help中
                                      // nums_arg指定可以选择0到多个文件名
