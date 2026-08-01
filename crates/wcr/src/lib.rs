@@ -1,7 +1,7 @@
-use clap::{Arg, Command, ArgAction};
+use clap::{Arg, ArgAction, Command};
 use std::error::Error;
-use std::io::{self, BufRead, BufReader};
 use std::fs::File;
+use std::io::{self, BufRead, BufReader};
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
 #[derive(Debug)]
@@ -30,25 +30,23 @@ pub fn get_args() -> MyResult<Config> {
                 .value_name("FILES")
                 .help("Input files")
                 .num_args(0..)
-                .default_value("-")
-            // 1. 创建了一个files参数，help占位符叫FILES, help输出选项Input file.
-            // 至少需要0个参数
-            // 默认值为"-"
+                .default_value("-"), // 1. 创建了一个files参数，help占位符叫FILES, help输出选项Input file.
+                                     // 至少需要0个参数
+                                     // 默认值为"-"
         )
         .arg(
             Arg::new("lines")
                 .short('l')
                 .long("lines")
                 .help("Show line count")
-                .action(ArgAction::SetTrue)
-            // 创建了一个lines参数，短参数名为-l, 长参数名为-lines, help信息为show line count, 设置时就为真
+                .action(ArgAction::SetTrue), // 创建了一个lines参数，短参数名为-l, 长参数名为-lines, help信息为show line count, 设置时就为真
         )
         .arg(
             Arg::new("words")
                 .short('w')
                 .long("words")
                 .help("Show word count")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("bytes")
@@ -56,8 +54,7 @@ pub fn get_args() -> MyResult<Config> {
                 .long("bytes")
                 .help("Show byte count")
                 .action(ArgAction::SetTrue)
-                .conflicts_with("chars")
-                 // 也可以设置default_value
+                .conflicts_with("chars"), // 也可以设置default_value
         )
         .arg(
             Arg::new("chars")
@@ -65,7 +62,7 @@ pub fn get_args() -> MyResult<Config> {
                 .long("chars")
                 .help("Show char count")
                 .action(ArgAction::SetTrue)
-                .conflicts_with("bytes")
+                .conflicts_with("bytes"),
         )
         .get_matches();
     let mut lines = matches.get_flag("lines");
@@ -110,7 +107,8 @@ pub fn run(config: Config) -> MyResult<()> {
             Err(err) => eprintln!("{}: {}", filename, err),
             Ok(file) => {
                 if let Ok(info) = count(file) {
-                    println!("{}{}{}{}{}",
+                    println!(
+                        "{}{}{}{}{}",
                         format_field(info.num_lines, config.lines),
                         format_field(info.num_words, config.words),
                         format_field(info.num_bytes, config.bytes),
@@ -183,7 +181,7 @@ pub fn count(mut file: impl BufRead) -> MyResult<FileInfo> {
         num_chars += buffer.chars().count();
         num_words += buffer.split_whitespace().count();
     }
-    Ok(FileInfo{
+    Ok(FileInfo {
         num_lines,
         num_words,
         num_bytes,
@@ -193,7 +191,7 @@ pub fn count(mut file: impl BufRead) -> MyResult<FileInfo> {
 
 #[cfg(test)]
 mod tests {
-    use super::{count, FileInfo, format_field};
+    use super::{FileInfo, count, format_field};
     use std::io::Cursor; // 模拟文件句柄， Cursor用于内存缓冲区任何实现了AsRef<[u8]>的类型，所以能够实现
     // Read Write， 从而让这些缓冲区可以用于任何实际执行I/O的读取器和写入器
     #[test]

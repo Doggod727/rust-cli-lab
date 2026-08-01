@@ -1,8 +1,8 @@
-use clap::{Arg, Command, ArgAction};
-use std::error::Error;
-use walkdir::{WalkDir, DirEntry};
+use crate::EntryType::*;
+use clap::{Arg, ArgAction, Command};
 use regex::Regex; // 正则表达式
-use crate::EntryType::*; // 让我们可以直接使用Dir变体
+use std::error::Error;
+use walkdir::{DirEntry, WalkDir}; // 让我们可以直接使用Dir变体
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
 #[derive(Debug)]
@@ -27,7 +27,7 @@ pub fn get_args() -> MyResult<Config> {
                 .value_name("PATH")
                 .help("Search paths")
                 .default_value(".")
-                .num_args(0..)
+                .num_args(0..),
         )
         .arg(
             Arg::new("names")
@@ -36,7 +36,7 @@ pub fn get_args() -> MyResult<Config> {
                 .long("name")
                 .short('n')
                 .action(ArgAction::Append)
-                .num_args(0..)
+                .num_args(0..),
         )
         .arg(
             Arg::new("types")
@@ -44,19 +44,18 @@ pub fn get_args() -> MyResult<Config> {
                 .help("Entry type")
                 .long("type")
                 .short('t')
-                .value_parser(["f", "d", "l"])// 限定取值范围
-                .action(ArgAction::Append)// 允许一个选项出现多次，其值append到对应的列表中
-                .num_args(0..) // 每一次选项可以拿多少值
+                .value_parser(["f", "d", "l"]) // 限定取值范围
+                .action(ArgAction::Append) // 允许一个选项出现多次，其值append到对应的列表中
+                .num_args(0..), // 每一次选项可以拿多少值
         )
         .get_matches();
     let names = matches
         .get_many::<String>("names")
         .map(|vals| {
             vals.map(|name| {
-                    Regex::new(&name)
-                        .map_err(|_err| format!("Invalid --name \"{}\"", name))
-                })
-                .collect::<Result<Vec<_>, _>>()
+                Regex::new(&name).map_err(|_err| format!("Invalid --name \"{}\"", name))
+            })
+            .collect::<Result<Vec<_>, _>>()
         })
         .transpose()?
         .unwrap_or_default();
@@ -69,11 +68,11 @@ pub fn get_args() -> MyResult<Config> {
                 "l" => Link,
                 _ => unreachable!("Invalid entry type"), // 绝对不可到达
             })
-                .collect()
+            .collect()
         })
         .unwrap_or_default();
 
-    Ok(Config{
+    Ok(Config {
         paths: matches
             .get_many::<String>("path")
             .unwrap()
@@ -127,21 +126,21 @@ pub fn run(config: Config) -> MyResult<()> {
     let type_filter = |entry: &DirEntry| {
         config.entry_types.is_empty()
             || config
-            .entry_types
-            .iter()
-            .any(|entry_type| match entry_type {
-                Dir => entry.file_type().is_dir(),
-                File => entry.file_type().is_file(),
-                Link => entry.file_type().is_symlink(),
-            })
+                .entry_types
+                .iter()
+                .any(|entry_type| match entry_type {
+                    Dir => entry.file_type().is_dir(),
+                    File => entry.file_type().is_file(),
+                    Link => entry.file_type().is_symlink(),
+                })
     };
 
     let name_filter = |entry: &DirEntry| {
         config.names.is_empty()
             || config
-            .names
-            .iter()
-            .any(|re| re.is_match(&entry.file_name().to_string_lossy()))
+                .names
+                .iter()
+                .any(|re| re.is_match(&entry.file_name().to_string_lossy()))
     };
 
     for path in config.paths {

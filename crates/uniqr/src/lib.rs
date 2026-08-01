@@ -1,4 +1,4 @@
-use clap::{Arg, Command, ArgAction};
+use clap::{Arg, ArgAction, Command};
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Write};
@@ -8,9 +8,9 @@ type MyResult<T> = Result<T, Box<dyn Error>>;
 // Config
 #[derive(Debug)]
 pub struct Config {
-    in_file: String, // 输入文件
+    in_file: String,          // 输入文件
     out_file: Option<String>, // 输出文件
-    count: bool, // 是否需要进行计数
+    count: bool,              // 是否需要进行计数
 }
 // 获取参数
 pub fn get_args() -> MyResult<Config> {
@@ -23,17 +23,15 @@ pub fn get_args() -> MyResult<Config> {
                 .value_name("IN_FILE")
                 .help("Input file")
                 .default_value("-")
-                .num_args(1)
-            // 创建了一个变量in_file, 值占位符为IN_FILE
-            // 默认值为标准输入，接受参数只能为1个
+                .num_args(1), // 创建了一个变量in_file, 值占位符为IN_FILE
+                              // 默认值为标准输入，接受参数只能为1个
         )
         .arg(
             Arg::new("out_file")
                 .value_name("OUT_FILE")
                 .help("Output file")
-                .num_args(0..=1)
-            // 创建了一个out_file变量，值占位符为OUT_FILE
-            // 可以接受0个或者1个输入
+                .num_args(0..=1), // 创建了一个out_file变量，值占位符为OUT_FILE
+                                  // 可以接受0个或者1个输入
         )
         .arg(
             Arg::new("count")
@@ -43,14 +41,9 @@ pub fn get_args() -> MyResult<Config> {
                 .action(ArgAction::SetTrue),
         )
         .get_matches();
-    Ok(Config{
-        in_file: matches
-            .get_one::<String>("in_file")
-            .cloned()
-            .unwrap(),
-        out_file: matches
-            .get_one::<String>("out_file")
-            .map(String::from),
+    Ok(Config {
+        in_file: matches.get_one::<String>("in_file").cloned().unwrap(),
+        out_file: matches.get_one::<String>("out_file").map(String::from),
         count: matches.get_flag("count"),
     })
 }
@@ -62,8 +55,7 @@ fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
     }
 }
 pub fn run(config: Config) -> MyResult<()> {
-    let mut file = open(&config.in_file)
-        .map_err(|e| format!("{}: {}", config.in_file, e))?; // map_err如果作用值是err变体，执行闭包，是ok变体，直接返回绑定的值
+    let mut file = open(&config.in_file).map_err(|e| format!("{}: {}", config.in_file, e))?; // map_err如果作用值是err变体，执行闭包，是ok变体，直接返回绑定的值
     let mut line = String::new();
     let mut pre_line = String::new(); // 指向上一段的开头的第一个字符串
     let mut pre_count: u64 = 0; // 已经出现了多少的重复的字符串
