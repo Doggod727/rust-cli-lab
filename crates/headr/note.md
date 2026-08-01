@@ -9,7 +9,7 @@
 如果没有文件参数，从标准输入读取输入
 如果文件不存在，或者无法访问，输出错误信息后退出.
 ## Getting Started
-### Writing a Unit Test to Parse a Strng into a Number
+### Writing a Unit Test to Parse a String into a Number
 所有命令行参数都是字符串！
 str::parse()函数可以将字符串切片解析为其他类型
 当无法将值解析为目标数字是，返回一个含有Err变体的Result
