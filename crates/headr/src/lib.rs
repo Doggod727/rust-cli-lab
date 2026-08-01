@@ -103,70 +103,68 @@ pub fn run(config: Config) -> MyResult<()> {
         match open(&filename) {
             Err(err) => eprintln!("{}: {}", filename, err),
             Ok(mut file) => {
-                    // 如果当前确实有多个输入文件，输出一个标题
-                    // // 如果要求按照字节读取
-                    // if let Some(mut bytes) = config.bytes {
-                    //     for byte in file.bytes() {
-                    //         // 按照字节读取
-                    //         let byte = byte?;
-                    //         print!("{}", byte as char);
-                    //         bytes -= 1;
-                    //         if bytes == 0 {
-                    //             break;
-                    //         }
-                    //     }
-                    // } else {
-                    //     // 输出指定行数
-                    //     let mut lines = config.lines;
-                    //     for line in file.lines() {
-                    //         let line = line?;
-                    //         print!("{}", line);
-                    //         lines -= 1;
-                    //         if lines == 0 {
-                    //            break;
-                    //         }
-                    //     }
-                    // }
-                    // take()方法接受一个usize，表示要拿取多少的行
-                    //for line in file.lines().take(config.lines) {
-                      //  println!("{}", line?);
-                    //}
-                    // BufRead::lines读取文件时，返回的每一个字符串末尾不会包含换行符
-                    // BufRead::read_line方法从底层流读取字节，直到遇到换行分隔符或者文件末尾
-                    // 找到分隔符后，分隔符添加到buf中
-                    if num_files > 1 {
-                        println!(
-                        "{} ==> {} <==", if file_num > 0 {"\n"} else {""},
-                            filename
-                        )
-                    }
-                    if let Some(num_bytes) = config.bytes {
-                        let mut handle = file.take(num_bytes as u64);
-                        // take方法表示从file中读取最多num_bytes个字节
-                        let mut buffer = vec![0; num_bytes];
-                        let bytes_read = handle.read(&mut buffer)?; //从handle中读取到buffer中去
-                        print!("{}",
-                            String::from_utf8_lossy(&buffer[..bytes_read])
-                        );
-                        // 将buffer中的字节转换为utf-8的字符串, 如果字符串无效，返回未知字符
-                        // let bytes = file.bytes().take(num_bytes).collect::<Vec<_>>();
-                        // ::<>类型注解
-                    } else {
-                        let mut line = String::new();
-                        for _ in 0..config.lines {
-                            let bytes = file.read_line(&mut line)?;
-                            // read_line方法获取一个Result
-                            // read_line方法读取的是所有字节
-                            // 返回的是一个Result变体，Ok()存储获取了多少字节
-                            // 如果是Ok(0)， 说明读取的是EOF
-                            if bytes == 0 {
-                                break; // 读取了EOF，可以停止了
-                            }
-                            print!("{line}");
-                            line.clear(); // read_line将读取的内容append到line中，所以要清空
-
+                // 如果当前确实有多个输入文件，输出一个标题
+                // // 如果要求按照字节读取
+                // if let Some(mut bytes) = config.bytes {
+                //     for byte in file.bytes() {
+                //         // 按照字节读取
+                //         let byte = byte?;
+                //         print!("{}", byte as char);
+                //         bytes -= 1;
+                //         if bytes == 0 {
+                //             break;
+                //         }
+                //     }
+                // } else {
+                //     // 输出指定行数
+                //     let mut lines = config.lines;
+                //     for line in file.lines() {
+                //         let line = line?;
+                //         print!("{}", line);
+                //         lines -= 1;
+                //         if lines == 0 {
+                //            break;
+                //         }
+                //     }
+                // }
+                // take()方法接受一个usize，表示要拿取多少的行
+                //for line in file.lines().take(config.lines) {
+                //  println!("{}", line?);
+                //}
+                // BufRead::lines读取文件时，返回的每一个字符串末尾不会包含换行符
+                // BufRead::read_line方法从底层流读取字节，直到遇到换行分隔符或者文件末尾
+                // 找到分隔符后，分隔符添加到buf中
+                if num_files > 1 {
+                    println!(
+                        "{} ==> {} <==",
+                        if file_num > 0 { "\n" } else { "" },
+                        filename
+                    )
+                }
+                if let Some(num_bytes) = config.bytes {
+                    let mut handle = file.take(num_bytes as u64);
+                    // take方法表示从file中读取最多num_bytes个字节
+                    let mut buffer = vec![0; num_bytes];
+                    let bytes_read = handle.read(&mut buffer)?; //从handle中读取到buffer中去
+                    print!("{}", String::from_utf8_lossy(&buffer[..bytes_read]));
+                    // 将buffer中的字节转换为utf-8的字符串, 如果字符串无效，返回未知字符
+                    // let bytes = file.bytes().take(num_bytes).collect::<Vec<_>>();
+                    // ::<>类型注解
+                } else {
+                    let mut line = String::new();
+                    for _ in 0..config.lines {
+                        let bytes = file.read_line(&mut line)?;
+                        // read_line方法获取一个Result
+                        // read_line方法读取的是所有字节
+                        // 返回的是一个Result变体，Ok()存储获取了多少字节
+                        // 如果是Ok(0)， 说明读取的是EOF
+                        if bytes == 0 {
+                            break; // 读取了EOF，可以停止了
                         }
+                        print!("{line}");
+                        line.clear(); // read_line将读取的内容append到line中，所以要清空
                     }
+                }
             }
         }
     }

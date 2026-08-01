@@ -1,10 +1,10 @@
-use clap::{Command, Arg, ArgAction};
-use std::error::Error;
+use clap::{Arg, ArgAction, Command};
 use regex::{Regex, RegexBuilder}; // 正则表达式部分
-use walkdir::WalkDir;
-use std::fs:: File;
+use std::error::Error;
+use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 use std::mem;
+use walkdir::WalkDir;
 // 自定义错误类型
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
@@ -12,13 +12,12 @@ type MyResult<T> = Result<T, Box<dyn Error>>;
 pub struct Config {
     pattern: Regex, // 正则表达式 程序的不区分大小写选项用regex::RegexBuilder通过case_insensitive方法创建
     invert_match: bool, // 匹配反转
-    count: bool, // 是否计数
+    count: bool,    // 是否计数
     recursive: bool, // 递归遍历目录
     files: Vec<String>, // 输入文件，默认-
 }
 
 pub fn get_args() -> MyResult<Config> {
-
     let matches = Command::new("grepr")
         .author("kyousuke")
         .version("0.1.0")
@@ -28,21 +27,19 @@ pub fn get_args() -> MyResult<Config> {
                 .value_name("PATTERN")
                 .required(true)
                 .help("Search pattern")
-                .num_args(1)
-                // pattern是必须接受的
-            // 没有short，long的可选参数叫做位置参数
-            // 位置参数在clap声明中的顺序会依次赋值一个index
-            // 从1开始
-            // 其中必选参数的index必须比可选的位置参数小
-            // 否则无法解析出必选参数的值
+                .num_args(1), // pattern是必须接受的
+                              // 没有short，long的可选参数叫做位置参数
+                              // 位置参数在clap声明中的顺序会依次赋值一个index
+                              // 从1开始
+                              // 其中必选参数的index必须比可选的位置参数小
+                              // 否则无法解析出必选参数的值
         )
         .arg(
             Arg::new("file")
                 .value_name("FILE")
                 .num_args(0..)
                 .help("Input file(s)")
-                .default_value("-")
-            // 输入文件的参数设置
+                .default_value("-"), // 输入文件的参数设置
         )
         .arg(
             Arg::new("count")
@@ -50,8 +47,7 @@ pub fn get_args() -> MyResult<Config> {
                 .short('c')
                 .long("count")
                 .help("Count occurrences")
-                .action(ArgAction::SetTrue)
-            // -c不与任何冲突
+                .action(ArgAction::SetTrue), // -c不与任何冲突
         )
         .arg(
             Arg::new("insensitive")
@@ -59,7 +55,7 @@ pub fn get_args() -> MyResult<Config> {
                 .short('i')
                 .long("insensitive")
                 .help("Case-insensitive")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("invert_match")
@@ -67,7 +63,7 @@ pub fn get_args() -> MyResult<Config> {
                 .short('v')
                 .long("invert-match")
                 .help("Invert match")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("recursive")
@@ -75,7 +71,7 @@ pub fn get_args() -> MyResult<Config> {
                 .help("Recursive search")
                 .short('r')
                 .long("recursive")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::SetTrue),
         )
         .get_matches();
     Ok(Config {
@@ -89,11 +85,14 @@ pub fn get_args() -> MyResult<Config> {
         recursive: matches.get_flag("recursive"),
         pattern: matches
             .get_one::<String>("pattern")
-            .map(|pattern|
-                RegexBuilder::build( // 编译正则表达式
-                RegexBuilder::new(&pattern) // 创建正则表达式
-                .case_insensitive(matches.get_flag("insensitive"))
-                ).map_err(|_err| format!("Invalid pattern \"{}\"", pattern)))
+            .map(|pattern| {
+                RegexBuilder::build(
+                    // 编译正则表达式
+                    RegexBuilder::new(&pattern) // 创建正则表达式
+                        .case_insensitive(matches.get_flag("insensitive")),
+                )
+                .map_err(|_err| format!("Invalid pattern \"{}\"", pattern))
+            })
             .transpose()?
             .unwrap(),
         // get_one获取模式输入得到Option<&String>，并且必定是Some(val)变体
@@ -117,27 +116,25 @@ pub fn run(config: Config) -> MyResult<()> {
         } else {
             print!("{}", val);
         }
-    } ;
+    };
     for entry in entries {
         match entry {
             Err(e) => eprintln!("{}", e),
             Ok(filename) => match open(&filename) {
                 Err(e) => eprintln!("{}: {}", filename, e), // 打开文件失败
-                Ok(file) => {
-                    match find_lines(file, &config.pattern, config.invert_match) {
-                        Err(e) => eprintln!("{}", e),
-                        Ok(matches) => {
-                            if config.count {
-                                print(&filename, &format!("{}\n", matches.len()));
-                            } else {
-                                for line in &matches {
-                                    print(&filename, line);
-                                }
+                Ok(file) => match find_lines(file, &config.pattern, config.invert_match) {
+                    Err(e) => eprintln!("{}", e),
+                    Ok(matches) => {
+                        if config.count {
+                            print(&filename, &format!("{}\n", matches.len()));
+                        } else {
+                            for line in &matches {
+                                print(&filename, line);
                             }
                         }
                     }
-                }
-            }
+                },
+            },
         }
     }
     Ok(())
@@ -159,8 +156,9 @@ fn find_files(paths: &[String], recursive: bool) -> Vec<MyResult<String>> {
             for entry in WalkDir::new(path) {
                 match entry {
                     Err(e) => result.push(Err(Box::new(e))), // 如果访问条目失败，加入错误信息
-                    Ok(entry) if entry.file_type().is_file() =>
-                        result.push(Ok(entry.path().display().to_string())),
+                    Ok(entry) if entry.file_type().is_file() => {
+                        result.push(Ok(entry.path().display().to_string()))
+                    }
                     Ok(entry) if entry.file_type().is_dir() && !recursive => {
                         result.push(Err(From::from(format!(
                             "{} is a directory",
@@ -168,7 +166,7 @@ fn find_files(paths: &[String], recursive: bool) -> Vec<MyResult<String>> {
                         ))));
                         break;
                     }
-                    Ok(_) => {},
+                    Ok(_) => {}
                 }
                 // WalkDir::new()创建迭代器。直到将所有子目录遍历完毕
             }
@@ -177,7 +175,11 @@ fn find_files(paths: &[String], recursive: bool) -> Vec<MyResult<String>> {
     result
 }
 
-fn find_lines<T: BufRead>(mut file: T, pattern: &Regex, invert_match: bool) -> MyResult<Vec<String>> {
+fn find_lines<T: BufRead>(
+    mut file: T,
+    pattern: &Regex,
+    invert_match: bool,
+) -> MyResult<Vec<String>> {
     let mut matches = vec![];
     let mut line = String::new();
 
@@ -201,14 +203,14 @@ fn find_lines<T: BufRead>(mut file: T, pattern: &Regex, invert_match: bool) -> M
 fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
     match filename {
         "-" => Ok(Box::new(BufReader::new(io::stdin()))),
-         _ => Ok(Box::new(BufReader::new(File::open(filename)?))),
+        _ => Ok(Box::new(BufReader::new(File::open(filename)?))),
     }
 }
 #[cfg(test)]
 mod tests {
     use super::{find_files, find_lines};
     use pretty_assertions::assert_eq;
-    use rand::{distributions::Alphanumeric, Rng};
+    use rand::{Rng, distributions::Alphanumeric};
     use regex::{Regex, RegexBuilder};
     use std::io::Cursor;
 
@@ -247,8 +249,7 @@ mod tests {
     #[test]
     fn test_find_files() {
         // Verify that the function finds a file known to exist
-        let files =
-            find_files(&["./tests/inputs/fox.txt".to_string()], false);
+        let files = find_files(&["./tests/inputs/fox.txt".to_string()], false);
         assert_eq!(files.len(), 1);
         assert_eq!(files[0].as_ref().unwrap(), "./tests/inputs/fox.txt");
 
@@ -290,4 +291,3 @@ mod tests {
         assert!(files[0].is_err());
     }
 }
-
